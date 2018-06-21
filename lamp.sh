@@ -24,17 +24,39 @@ export DEBIAN_FRONTEND=noninteractive
 
 install()
 {
-    apt-get update
+  # TODO buster packages -> no php7.2-redis
+    #echo "deb http://raspbian.raspberrypi.org/raspbian/ buster main contrib non-free rpi" > /etc/apt/sources.list.d/ncp-buster.list
+#cat > /etc/apt/preferences <<EOF
+#Package: *
+#Pin: release n=stretch
+#Pin-Priority: 600
+#EOF
+
+# TODO sury packages -> no php7.2-redis in ARM
+echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list
+wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
+
+  apt-get update
+
+  $APTINSTALL php7.2-redis # TODO
+  exit
+
 
     # INSTALL 
     ##########################################
 
+    # apt-get update # TODO
     $APTINSTALL apt-utils cron
     $APTINSTALL apache2
-    $APTINSTALL php7.0 php7.0-curl php7.0-gd php7.0-fpm php7.0-cli php7.0-opcache \
-                php7.0-mbstring php7.0-xml php7.0-zip php7.0-fileinfo php7.0-ldap \
-                php7.0-intl libmagickcore-6.q16-2-extra php7.0-imagick php-mcrypt
+    $APTINSTALL php7.2 php7.2-curl php7.2-gd php7.2-fpm php7.2-cli php7.2-opcache \
+                php7.2-mbstring php7.2-xml php7.2-zip php7.2-fileinfo php7.2-ldap \
+                php7.2-intl libmagickcore-6.q16-2-extra php7.2-imagick #php-mcrypt
 
+    # TODO
+    #php-mcrypt -> only 7.1 available
+    #https://github.com/nextcloud/nextcloud-snap/issues/617
+    #https://github.com/onelogin/php-saml/issues/277
+    #https://github.com/nextcloud/nextcloud-snap/issues/617
 
     mkdir -p /run/php
 
@@ -46,7 +68,7 @@ install()
 
     debconf-set-selections <<< "mariadb-server-5.5 mysql-server/root_password password $DBPASSWD"
     debconf-set-selections <<< "mariadb-server-5.5 mysql-server/root_password_again password $DBPASSWD"
-    $APTINSTALL mariadb-server php7.0-mysql 
+    $APTINSTALL mariadb-server php7.2-mysql 
     mkdir -p /run/mysqld
     chown mysql /run/mysqld
 
@@ -87,7 +109,7 @@ EOF
     # CONFIGURE PHP7
     ##########################################
 
-    cat > /etc/php/7.0/mods-available/opcache.ini <<EOF
+    cat > /etc/php/7.2/mods-available/opcache.ini <<EOF
 zend_extension=opcache.so
 opcache.enable=1
 opcache.enable_cli=1
@@ -103,7 +125,7 @@ EOF
     a2enmod http2
     a2enconf http2 
     a2enmod proxy_fcgi setenvif
-    a2enconf php7.0-fpm
+    a2enconf php7.2-fpm
     a2enmod rewrite
     a2enmod headers
     a2enmod dir
